@@ -1,0 +1,66 @@
+#!/bin/python
+
+import shutil
+import re
+import sys
+import os
+import csv
+from datetime import datetime
+from pyspark.sql import SparkSession, Window
+from pyspark.sql.functions import udf, struct, sum, col, first, lit, coalesce
+from pyspark.sql.types import StringType, IntegerType
+from itertools import chain
+
+from function import merge_udf
+
+input_file = sys.argv[1]
+output_file = sys.argv[2]
+
+spark = SparkSession.builder.appName("NBA").getOrCreate()
+
+window = Window.rowsBetween(Window.unboundedPreceding, Window.unboundedFollowing)
+
+read_data = spark.read.option("header", "true").csv(input_file) \
+
+data = read_data \
+    .filter(read_data.Type == "score") \
+    .groupBy("Player", "Time Interval") \
+    .count() \
+
+levels = [ x for x in chain(*data.select("Time Interval").distinct().collect()) ]
+
+pivoted = data.groupBy("Player").pivot("Time Interval", levels).count().na.fill(0) \
+    
+# not all players have all time interval's
+
+for x in levels:
+  print type(pivoted[x])
+
+row_count = sum(coalesce(x) for x in levels)
+
+adjusted = [ (col(c) / row_count).alias(c) for c in levels ]
+
+output = pivoted.select("Player", *adjusted)
+
+#output = data \
+#    .groupBy("Player") \
+#    .pivot("Time Interval") \
+#    .sum("count") \
+
+    #.show()
+    ##.withColumn("Player Time Interval", merge_udf(struct("Player", "Time Interval"))) \
+    ##.groupBy("Player Time Interval") \
+    ##.count() \
+    ##.repartition(2000) \
+    ##.groupBy("Player Time Interval") \
+    ##.agg(sum("count").alias("count")) \
+    ##.withColumn("total", sum(col("count")).over(window)) \
+    ##.withColumn("Percentage", col("count") * 100 / col("total")) \
+    ##.show()
+    #.pivot("Time Interval") \
+
+if os.path.exists(output_file):
+  shutil.rmtree(output_file)
+output.write.option("header", "true").csv(output_file)
+
+spark.stop()

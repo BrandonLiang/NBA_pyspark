@@ -1,0 +1,4 @@
+#!/bin/bash -ex
+
+scalac -cp ".:/usr/local/Cellar/apache-spark/2.0.1/libexec/jars/*" ${1}.scala
+scala -J-Xmx4g -cp ".:/usr/local/Cellar/apache-spark/2.0.1/libexec/jars/*" $1 $2

@@ -1,0 +1,7 @@
+spark-warehouse
+log/*
+*.log
+lib/*
+todo.txt
+abstract.txt
+*.docx

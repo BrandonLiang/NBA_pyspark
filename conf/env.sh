@@ -1,0 +1,9 @@
+SCRIPT=`greadlink -f $0`
+SCRIPT_DIR=`dirname $SCRIPT`
+export APP_HOME=$SCRIPT_DIR/..
+export DATA_DIR=/Volumes/external/NBA_Data
+export ES=$APP_HOME/es
+export PYSPARK=$APP_HOME/pyspark
+export BIN=$APP_HOME/bin
+export CSV=$APP_HOME/csv
+export LOGSTASH=~/src/logstash-5.3.2/bin/logstash
